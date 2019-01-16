@@ -1,0 +1,8 @@
+datasource:
+  path: root:password@tcp(192.168.33.131:30153)/test-mysql?charset=utf8
+  type: mysql
+  host: 192.168.33.131
+  port: 30153
+  username: root
+  password: password
+  database: test-mysql
