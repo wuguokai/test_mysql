@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/flyleft/gprofile"
 	_ "github.com/flyleft/gprofile"
@@ -41,7 +42,7 @@ func main() {
 	//fmt.Println(path)
 	//http.HandleFunc("/", reqHandlerTest)	//设置访问的路由
 	Path = getDBPath()
-	http.HandleFunc("/usedb", testRequestDB)
+	http.HandleFunc("/", testRequestDB)
 	err := http.ListenAndServe(":8989", nil) //设置监听的端口
 	checkErr(err)
 }
@@ -49,7 +50,10 @@ func main() {
 func testRequestDB(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	fmt.Println("path", req.URL.Path)
-	useDb()
+	result := useDb()
+	str, err := json.Marshal(result)
+	checkErr(err)
+	res.Write(str)
 }
 
 func reqHandlerTest(res http.ResponseWriter, req *http.Request) {
@@ -86,7 +90,7 @@ func getEnv() {
 	fmt.Println(a)
 }
 
-func useDb() {
+func useDb() map[int]map[string]string {
 	/*DSN数据源名称
 	[username[:password]@][protocol[(address)]]/dbname[?param1=value1¶mN=valueN]
 	user@unix(/path/to/socket)/dbname
@@ -98,17 +102,18 @@ func useDb() {
 	db, err := sql.Open(Path.Type, Path.Path)
 	checkErr(err)
 	//db.Query("drop database if exists test-mysql")
-	//db.Query("create database test-mysql")
+	//db.Query("create database if not exists  test-mysql")
 	//db.Query("use test-mysql")
-	//db.Query("create table test_db(c1 int, c2 varchar(20), c3 varchar(20))")
+	db.Query("create table if not exists test_db(c1 int, c2 varchar(20), c3 varchar(20))")
 	db.Query("truncate test_db")
 	db.Query("insert into test_db values (101, '姓名1', 'address1'), (102, '姓名2', 'address2'), (103, '姓名3', 'address3'), (104, '姓名4', 'address4')")
 	query, err := db.Query("select * from test_db")
 	checkErr(err)
 	//v := reflect.ValueOf(query)
 	//fmt.Println(v)
-	printResult(query)
+	result := printResult(query)
 	db.Close()
+	return result
 }
 
 func checkErr(errMasg error) {
@@ -117,7 +122,7 @@ func checkErr(errMasg error) {
 	}
 }
 
-func printResult(query *sql.Rows) {
+func printResult(query *sql.Rows) map[int]map[string]string {
 	column, _ := query.Columns()              //读出查询出的列字段名
 	values := make([][]byte, len(column))     //values是每个列的值，这里获取到byte里
 	scans := make([]interface{}, len(column)) //因为每次查询出来的列是不定长的，用len(column)定住当次查询的长度
@@ -129,7 +134,7 @@ func printResult(query *sql.Rows) {
 	for query.Next() { //循环，让游标往下移动
 		if err := query.Scan(scans...); err != nil { //query.Scan查询出来的不定长值放到scans[i] = &values[i],也就是每行都放在values里
 			fmt.Println(err)
-			return
+			return nil
 		}
 		row := make(map[string]string) //每行数据
 		for k, v := range values {     //每行数据是放在values里面，现在把它挪到row里
@@ -142,4 +147,5 @@ func printResult(query *sql.Rows) {
 	for k, v := range results { //查询出来的数组
 		fmt.Println(k, v)
 	}
+	return results
 }
