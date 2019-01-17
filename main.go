@@ -4,26 +4,28 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/flyleft/gprofile"
+	_ "github.com/flyleft/gprofile"
 	_ "github.com/go-sql-driver/mysql"
 	"net/http"
 	"os"
-	_ "github.com/flyleft/gprofile"
 	"strings"
 )
 
 type DataSource struct {
-	Type	string					`profile:"datasource.type"`
-	Host	string					`profile:"datasource.host"`
-	Port	string					`profile:"datasource.port"`
-	Username	string				`profile:"datasource.username"`
-	Password	string				`profile:"datasource.password"`
-	Database	string				`profile:"datasource.database"`
+	Type     string `profile:"datasource.type"`
+	Host     string `profile:"datasource.host"`
+	Port     string `profile:"datasource.port"`
+	Username string `profile:"datasource.username"`
+	Password string `profile:"datasource.password"`
+	Database string `profile:"datasource.database"`
 }
 
 type DataSourcePath struct {
-	Path	string				`profile:"datasource.path"`
-	Type	string				`profile:"datasource.type"`
+	Path string `profile:"datasource.path"`
+	Type string `profile:"datasource.type"`
 }
+
+var Path *DataSourcePath
 
 func main() {
 	//fmt.Println("hello")
@@ -38,8 +40,9 @@ func main() {
 	//path := getDBPath()
 	//fmt.Println(path)
 	//http.HandleFunc("/", reqHandlerTest)	//设置访问的路由
+	Path = getDBPath()
 	http.HandleFunc("/usedb", testRequestDB)
-	err := http.ListenAndServe(":8989", nil)	//设置监听的端口
+	err := http.ListenAndServe(":8989", nil) //设置监听的端口
 	checkErr(err)
 }
 
@@ -50,7 +53,7 @@ func testRequestDB(res http.ResponseWriter, req *http.Request) {
 }
 
 func reqHandlerTest(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()	//解析参数，默认是不会解析的
+	req.ParseForm() //解析参数，默认是不会解析的
 	fmt.Println(req.Form)
 	fmt.Println("path", req.URL.Path)
 	fmt.Println("scheme", req.URL.Scheme)
@@ -78,22 +81,21 @@ func add(a, b int) int {
 	return a + b
 }
 
-func getEnv()  {
+func getEnv() {
 	a := os.Getenv("a")
 	fmt.Println(a)
 }
 
 func useDb() {
 	/*DSN数据源名称
-	 [username[:password]@][protocol[(address)]]/dbname[?param1=value1¶mN=valueN]
-	 user@unix(/path/to/socket)/dbname
-	 user:password@tcp(localhost:5555)/dbname?charset=utf8&autocommit=true
-	 user:password@tcp([de:ad:be:ef::ca:fe]:80)/dbname?charset=utf8mb4,utf8
-	 user:password@/dbname
-	 无数据库: user:password@/
+	[username[:password]@][protocol[(address)]]/dbname[?param1=value1¶mN=valueN]
+	user@unix(/path/to/socket)/dbname
+	user:password@tcp(localhost:5555)/dbname?charset=utf8&autocommit=true
+	user:password@tcp([de:ad:be:ef::ca:fe]:80)/dbname?charset=utf8mb4,utf8
+	user:password@/dbname
+	无数据库: user:password@/
 	*/
-	path := getDBPath()
-	db, err := sql.Open(path.Type, path.Path)
+	db, err := sql.Open(Path.Type, Path.Path)
 	checkErr(err)
 	//db.Query("drop database if exists test-mysql")
 	//db.Query("create database test-mysql")
